@@ -1,0 +1,229 @@
+import mysql.connector
+from mysql.connector import Error
+from datetime import datetime
+from werkzeug.security import generate_password_hash
+from config import Config
+
+TABLE_SCHEMAS = {
+    'users': """
+        CREATE TABLE IF NOT EXISTS users (
+            uid INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(100) UNIQUE NOT NULL,
+            first_name VARCHAR(50) NOT NULL,
+            last_name VARCHAR(50) NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            user_type ENUM('super_admin', 'admin', 'student', 'institute') NOT NULL,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );
+    """,
+
+    'institutes': """
+        CREATE TABLE IF NOT EXISTS institutes (
+            iid INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            contact_email VARCHAR(100),
+            legal_name VARCHAR(100) NOT NULL,
+            description TEXT,
+            contact_phone VARCHAR(20),
+            billing_address TEXT,
+            vat_number VARCHAR(20),
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(uid) ON DELETE SET NULL
+        );
+    """,
+
+    'students': """
+        CREATE TABLE IF NOT EXISTS students (
+            sid INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            age INT CHECK (age >= 0),
+            qualification_level ENUM('school', 'o/l', 'a/l', 'undergraduate', 'graduate') DEFAULT 'school',
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(uid) ON DELETE CASCADE
+        );
+    """,
+
+    'student_search_filters': """
+        CREATE TABLE IF NOT EXISTS student_search_filters (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            student_id INT NOT NULL,
+            filters JSON NOT NULL,
+            searched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (student_id) REFERENCES students(sid) ON DELETE CASCADE
+        );
+    """,
+
+    'student_exam_results': """
+        CREATE TABLE IF NOT EXISTS student_exam_results (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            student_id INT NOT NULL,
+            al_results JSON,
+            ol_results JSON,
+            z_score DECIMAL(5,3),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (student_id) REFERENCES students(sid) ON DELETE CASCADE
+        );
+    """,
+
+    'courses': """
+        CREATE TABLE IF NOT EXISTS courses (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(100) NOT NULL,
+            description TEXT,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );
+    """,
+
+    'student_bookmarked_courses': """
+        CREATE TABLE IF NOT EXISTS student_bookmarked_courses (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            student_id INT NOT NULL,
+            course_id INT NOT NULL,
+            bookmarked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (student_id) REFERENCES students(sid) ON DELETE CASCADE,
+            FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+            UNIQUE KEY unique_bookmark (student_id, course_id)
+        );
+    """,
+
+}
+
+EXTRA_COLUMNS = {
+  
+}
+
+def create_database():
+    """Create database if it doesn't exist"""
+    try:
+        connection = mysql.connector.connect(
+            host=Config.DB_HOST,
+            user=Config.DB_USER,
+            password=Config.DB_PASSWORD,
+        )
+        
+        cursor = connection.cursor()
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {Config.DB_NAME}")
+        print(f"Database '{Config.DB_NAME}' created successfully or already exists")
+            
+    except Error as e:
+        print(f"Error creating database: {e}")
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def get_db_connection():
+    return mysql.connector.connect(
+        host=Config.DB_HOST,
+        user=Config.DB_USER,
+        password=Config.DB_PASSWORD,
+        database=Config.DB_NAME
+    )
+
+def create_tables():
+    """Create all required tables"""
+    try:
+        connection = get_db_connection()
+        if connection.is_connected():
+            print("Connected to the database")
+        
+        cursor = connection.cursor(dictionary=True)
+        for table, query in TABLE_SCHEMAS.items():
+            print(f"Checking table: {table}")
+            cursor.execute(query)            
+            connection.commit()
+            print(f"{table} table created successfully!")
+        
+    except Error as e:
+        print(f"Error creating tables: {e}")
+    
+    finally:
+        if cursor: cursor.close()
+        if connection: connection.close()
+            
+
+def alter_columns():
+  conn = get_db_connection()
+  cursor = conn.cursor()
+  
+  for table, columns in EXTRA_COLUMNS.items():
+    for col in columns:
+      col_name = col["name"]
+      col_type = col["type"]
+      
+      cursor.execute(f"""
+        SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = '{Config.DB_NAME}'
+        AND TABLE_NAME = '{table}'
+        AND COLUMN_NAME = '{col_name}';
+      """)
+      
+      if cursor.fetchone()[0] == 0:
+        alter_query = f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type};"
+        print(f"Adding column: {col_name} to table: {table}")
+        cursor.execute(alter_query)
+              
+  conn.commit()
+  cursor.close()
+  conn.close()
+
+def create_default_users():
+    """Create default admin users"""
+    try:
+        connection = get_db_connection()
+        
+        with connection.cursor(dictionary=True) as cursor:
+            # Check if super admin exists
+            cursor.execute("SELECT uid FROM users WHERE user_type = 'super_admin'")
+            if not cursor.fetchone():
+                # Create super admin
+                super_admin_password = generate_password_hash('admin123')
+                cursor.execute("""
+                    INSERT INTO users (email, first_name, last_name, password_hash, user_type)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, ('superadmin@example.com', 'Super', 'Admin', super_admin_password, 'super_admin'))
+                print("Super admin created successfully!")
+            
+            # Check if admin exists
+            cursor.execute("SELECT uid FROM users WHERE user_type = 'admin'")
+            if not cursor.fetchone():
+                # Create admin
+                admin_password = generate_password_hash('admin123')
+                cursor.execute("""
+                    INSERT INTO users (email, first_name, last_name, password_hash, user_type)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, ('admin@example.com', 'Admin', 'User', admin_password, 'admin'))
+                print("Admin user created successfully!")
+            
+            connection.commit()
+            
+    except Error as e:
+        print(f"Error creating default users: {e}")
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def apply_schema_updates():
+    """Main function to set up the database"""
+    print("Setting up database...")
+    try:
+        create_database()
+        create_tables()
+        create_default_users()
+    except Exception as e:
+        print(f"Database setup is not completed: {e}")
+        return
+    print("Database setup completed!")
+
+if __name__ == "__main__":
+    apply_schema_updates()
