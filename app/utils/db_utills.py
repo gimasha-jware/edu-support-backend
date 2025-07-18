@@ -2,7 +2,7 @@ import mysql.connector
 from mysql.connector import Error
 from datetime import datetime
 from werkzeug.security import generate_password_hash
-from config import Config
+from app.utils.config import Config
 
 TABLE_SCHEMAS = {
     'users': """
@@ -103,23 +103,24 @@ EXTRA_COLUMNS = {
 
 def create_database():
     """Create database if it doesn't exist"""
+    conn = None
     try:
-        connection = mysql.connector.connect(
+        conn = mysql.connector.connect(
             host=Config.DB_HOST,
             user=Config.DB_USER,
             password=Config.DB_PASSWORD,
         )
         
-        cursor = connection.cursor()
+        cursor = conn.cursor()
         cursor.execute(f"CREATE DATABASE IF NOT EXISTS {Config.DB_NAME}")
         print(f"Database '{Config.DB_NAME}' created successfully or already exists")
             
     except Error as e:
         print(f"Error creating database: {e}")
     finally:
-        if connection.is_connected():
+        if conn.is_connected():
             cursor.close()
-            connection.close()
+            conn.close()
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -132,24 +133,23 @@ def get_db_connection():
 def create_tables():
     """Create all required tables"""
     try:
-        connection = get_db_connection()
-        if connection.is_connected():
+        conn = get_db_connection()
+        if conn.is_connected():
             print("Connected to the database")
         
-        cursor = connection.cursor(dictionary=True)
+        cursor = conn.cursor(dictionary=True)
         for table, query in TABLE_SCHEMAS.items():
-            print(f"Checking table: {table}")
-            cursor.execute(query)            
-            connection.commit()
-            print(f"{table} table created successfully!")
+            # print(f"Checking table: {table}")
+            cursor.execute(query)
+            conn.commit()
+            # print(f"{table} table created successfully!")
         
     except Error as e:
         print(f"Error creating tables: {e}")
     
     finally:
         if cursor: cursor.close()
-        if connection: connection.close()
-            
+        if conn: conn.close()
 
 def alter_columns():
   conn = get_db_connection()
@@ -179,9 +179,9 @@ def alter_columns():
 def create_default_users():
     """Create default admin users"""
     try:
-        connection = get_db_connection()
-        
-        with connection.cursor(dictionary=True) as cursor:
+        conn = get_db_connection()
+
+        with conn.cursor(dictionary=True) as cursor:
             # Check if super admin exists
             cursor.execute("SELECT uid FROM users WHERE user_type = 'super_admin'")
             if not cursor.fetchone():
@@ -203,15 +203,15 @@ def create_default_users():
                     VALUES (%s, %s, %s, %s, %s)
                 """, ('admin@example.com', 'Admin', 'User', admin_password, 'admin'))
                 print("Admin user created successfully!")
-            
-            connection.commit()
-            
+
+            conn.commit()
+
     except Error as e:
         print(f"Error creating default users: {e}")
     finally:
-        if connection.is_connected():
+        if conn.is_connected():
             cursor.close()
-            connection.close()
+            conn.close()
 
 def apply_schema_updates():
     """Main function to set up the database"""

@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from urllib.parse import quote_plus
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,9 +15,10 @@ class Config:
     DB_HOST = os.environ.get('DB_HOST')
     DB_USER = os.environ.get('DB_USER')
     DB_PASSWORD = os.environ.get('DB_PASSWORD')
+    SQLALCHEMY_DB_PASSWORD = quote_plus(DB_PASSWORD)
     DB_NAME = os.environ.get('DB_NAME')
     
-    SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
+    SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{DB_USER}:{SQLALCHEMY_DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # CORS configuration
