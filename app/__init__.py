@@ -4,6 +4,7 @@ from flask_cors import CORS
 from app.utils.config import config
 import os
 from app.routes.auth import auth_bp
+from app.models import User, Student  # Import models to ensure they are registered
 
 def create_app(config_name='default'):
     app = Flask(__name__)
