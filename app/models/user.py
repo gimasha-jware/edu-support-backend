@@ -3,6 +3,7 @@ from app.extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from enum import Enum
+from sqlalchemy.orm import relationship
 
 class UserType(Enum):
     SUPER_ADMIN = 'super_admin'
@@ -31,10 +32,10 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # # Relationships
-    # student_profile = db.relationship('Student', backref='user', uselist=False, cascade='all, delete-orphan')
-    # institute_profile = db.relationship('Institute', backref='user', uselist=False)
-    
+    # One-to-one relationships
+    student_profile = relationship("Student", backref="user", uselist=False)
+    admin_profile = relationship("Admin", backref="user", uselist=False)
+   
     def __init__(self, email, first_name, last_name, password, user_type):
         self.email = email
         self.first_name = first_name
@@ -58,7 +59,7 @@ class User(db.Model):
     
     def to_dict(self):
         """Convert user object to dictionary"""
-        return {
+        base ={
             'id': self.uid,
             'email': self.email,
             'first_name': self.first_name,
@@ -68,6 +69,16 @@ class User(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+    
+        # Attach profile data if available
+        if self.user_type == UserType.STUDENT and self.student_profile:
+            base["student_profile"] = self.student_profile.to_dict()
+        elif self.user_type == UserType.INSTITUTE and self.institute_profile:
+            base["institute_profile"] = self.institute_profile.to_dict()
+        elif self.user_type == UserType.ADMIN and self.admin_profile:
+            base["admin_profile"] = self.admin_profile.to_dict()
+
+        return base
     
     def is_admin(self):
         """Check if user is admin or super admin"""
@@ -80,10 +91,6 @@ class User(db.Model):
     def is_student(self):
         """Check if user is a student"""
         return self.user_type == UserType.STUDENT
-    
-    def is_institute(self):
-        """Check if user is an institute"""
-        return self.user_type == UserType.INSTITUTE
     
     def __repr__(self):
         return f'<User {self.email} - {self.user_type.value}>'
