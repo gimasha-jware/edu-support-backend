@@ -22,7 +22,6 @@ TABLE_SCHEMAS = {
     'institutes': """
         CREATE TABLE IF NOT EXISTS institutes (
             iid INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT,
             contact_email VARCHAR(100),
             legal_name VARCHAR(100) NOT NULL,
             description TEXT,
@@ -31,8 +30,19 @@ TABLE_SCHEMAS = {
             vat_number VARCHAR(20),
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );
+    """,
+
+    'admins': """
+        CREATE TABLE IF NOT EXISTS admins (
+            aid INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            role_description VARCHAR(255),
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(uid) ON DELETE SET NULL
+            FOREIGN KEY (user_id) REFERENCES users(uid) ON DELETE CASCADE
         );
     """,
 
