@@ -112,6 +112,7 @@ def login():
         # Find user by email
         user = User.query.filter_by(email=email).first()
         print(f"User found: {user}, user_type: {user.user_type.value if user else 'None'}")
+        print(data)
 
         if user and user.user_type.value not in ['student', 'admin', 'super_admin']:
             return jsonify({'error': 'Unauthorized'}), 403
@@ -131,9 +132,10 @@ def login():
         
         # if user.is_student() and user.student_profile:
         #     user_info['student_profile'] = user.student_profile.to_dict()
-        # elif user.is_institute() and user.institute_profile:
-        #     user_info['institute_profile'] = user.institute_profile.to_dict()
-        
+        print(f"User info: {user_info}")
+        print(f"Access token: {access_token}")
+        print(f"Refresh token: {refresh_token}")
+
         return jsonify({
             'access_token': access_token,
             'refresh_token': refresh_token,

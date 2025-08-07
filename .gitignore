@@ -1,7 +1,6 @@
 .qodo
 
 # Environment variables
-.env
 
 # Virtual environment
 venv/
@@ -14,5 +13,6 @@ __pycache__/
 *.pyd
 
 # IDE settings (optional but recommended)
-.vscode/
 .idea/
+config.bat
+node_modules
