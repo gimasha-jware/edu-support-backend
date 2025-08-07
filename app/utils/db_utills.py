@@ -86,10 +86,37 @@ TABLE_SCHEMAS = {
         CREATE TABLE IF NOT EXISTS courses (
             id INT AUTO_INCREMENT PRIMARY KEY,
             title VARCHAR(100) NOT NULL,
-            description TEXT,
+            description TEXT NOT NULL,
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );
+    """,
+
+    'course_streams': """
+        CREATE TABLE course_streams (
+            id INT PRIMARY KEY AUTO_INCREMENT ,
+            course_id INT NOT NULL,
+            stream VARCHAR(100),
+            FOREIGN KEY (course_id) REFERENCES courses(id)
+        );
+    """,
+
+    'course_locations': """
+        CREATE TABLE course_locations (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            course_id INT NOT NULL,
+            location VARCHAR(100) NOT NULL,
+            FOREIGN KEY (course_id) REFERENCES courses(id)
+        );
+    """,
+
+    'course_education_mode': """
+        CREATE TABLE course_education_mode (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            course_id INT NOT NULL,
+            education_mode VARCHAR(20) NOT NULL,
+            FOREIGN KEY (course_id) REFERENCES courses(id)
         );
     """,
 
@@ -108,7 +135,20 @@ TABLE_SCHEMAS = {
 }
 
 EXTRA_COLUMNS = {
-  
+  'courses': [
+        {"name": "sub_content", "type": "VARCHAR(140)"},
+        {"name": "institute_type", "type": "VARCHAR(20) NOT NULL"},
+        {"name": "category", "type": "VARCHAR(50) NOT NULL"},
+        {"name": "course_duration", "type": "INT NOT NULL"},
+        {"name": "course_fee", "type": "DECIMAL(10,2) NOT NULL"},
+        {"name": "install_availability", "type": "BOOLEAN NOT NULL"},
+        {"name": "instructor", "type": "VARCHAR(100)"},
+        {
+            "name": "course_level", 
+            "type": "ENUM('primary education', 'junior education', 'ordinary level', 'advanced level', 'certificate', 'NVQ', 'diploma', 'higher national diploma', 'degree', 'masters', 'PhD') NOT NULL"
+        },
+
+    ]
 }
 
 def create_database():

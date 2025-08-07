@@ -4,6 +4,7 @@ from flask_cors import CORS
 from app.utils.config import config
 import os
 from app.routes.auth import auth_bp
+from app.routes.course_routes import course_bp
 from app.models import User, Student  # Import models to ensure they are registered
 
 def create_app(config_name='default'):
@@ -18,6 +19,7 @@ def create_app(config_name='default'):
     CORS(app)
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(course_bp, url_prefix='/api/courses')
  
     return app
 
