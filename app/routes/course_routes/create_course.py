@@ -11,7 +11,7 @@ from app.utils.role_checker import roles_required
 @roles_required('super_admin', 'admin')
 def create_course():
   data = request.get_json()
-
+  print("Request JSON:", request.get_json())
   required_fields = [
     'title', 'institute_type', 'category',
     'course_duration', 'course_fee',
@@ -58,6 +58,7 @@ def create_course():
     db.session.add(course)
     db.session.commit()
     # print("Course created")
+    print("Request JSON:", request.get_json())
     return jsonify(course.to_dict()), 201
 
   except Exception as e:

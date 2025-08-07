@@ -123,9 +123,18 @@ def login():
         if not user.is_active:
             return jsonify({'error': 'Account is deactivated'}), 401
         
-        # Create tokens
-        access_token = create_access_token(identity={"id": user.uid, "user_type": user.user_type.value}, expires_delta=timedelta(hours=1))
-        refresh_token = create_refresh_token(identity={"id":user.uid, "user_type": user.user_type.value}, expires_delta=timedelta(days=30))
+        # identity must be a string
+        identity = str(user.uid)
+
+        # extra info goes in additional_claims
+        additional_claims = {
+            "user_type": user.user_type.value
+        }
+
+        # create tokens
+        access_token = create_access_token(identity=identity, additional_claims=additional_claims, expires_delta=timedelta(hours=1))
+        refresh_token = create_refresh_token(identity=identity, additional_claims=additional_claims, expires_delta=timedelta(days=30))
+
         
         # Get additional user info based on user type
         user_info = user.to_dict()
