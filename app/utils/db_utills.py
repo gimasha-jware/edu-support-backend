@@ -94,7 +94,7 @@ TABLE_SCHEMAS = {
     """,
 
     'course_streams': """
-        CREATE TABLE course_streams (
+        CREATE TABLE IF NOT EXISTS course_streams (
             id INT PRIMARY KEY AUTO_INCREMENT ,
             course_id INT NOT NULL,
             stream VARCHAR(100),
@@ -103,16 +103,16 @@ TABLE_SCHEMAS = {
     """,
 
     'course_locations': """
-        CREATE TABLE course_locations (
+        CREATE TABLE IF NOT EXISTS course_locations (
             id INT PRIMARY KEY AUTO_INCREMENT,
             course_id INT NOT NULL,
-            location VARCHAR(100) NOT NULL,
+            location VARCHAR(100),
             FOREIGN KEY (course_id) REFERENCES courses(id)
         );
     """,
 
     'course_education_mode': """
-        CREATE TABLE course_education_mode (
+        CREATE TABLE IF NOT EXISTS course_education_mode (
             id INT PRIMARY KEY AUTO_INCREMENT,
             course_id INT NOT NULL,
             education_mode VARCHAR(20) NOT NULL,
