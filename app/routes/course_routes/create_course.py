@@ -25,6 +25,7 @@ def validate_create_course_payload(data: dict) -> List[str]:
 
   for field in required_fields:
     if field not in data:
+      return jsonify({"error": f"{field} is required"}), 400
       errors.append(f"'{field}' is required")
 
   education_modes = data.get('education_modes')

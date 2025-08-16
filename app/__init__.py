@@ -6,6 +6,7 @@ import os
 from app.routes.auth import auth_bp
 from app.routes.course_routes import course_bp
 from app.models import User, Student  # Import models to ensure they are registered
+from app.routes.student_profile import student_bp
 
 def create_app(config_name='default'):
     app = Flask(__name__)
@@ -20,6 +21,8 @@ def create_app(config_name='default'):
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(course_bp, url_prefix='/api/courses')
- 
+    app.register_blueprint(student_bp, url_prefix='/api/student')
+
+   
     return app
 
