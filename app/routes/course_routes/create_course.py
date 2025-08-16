@@ -21,9 +21,6 @@ def create_course():
   for field in required_fields:
     if field not in data:
       return jsonify({"error": f"{field} is required"}), 400
-    
-  if 'locations' not in data or not isinstance(data['locations'], list) or len(data['locations']) == 0:
-    return jsonify({'error': "At least one location is required"}), 400
 
   if 'education_modes' not in data or not isinstance(data['education_modes'], list) or len(data['education_modes']) == 0:
     return jsonify({'error': "At least one education mode is required"}), 400
