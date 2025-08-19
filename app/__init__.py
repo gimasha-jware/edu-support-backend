@@ -7,6 +7,7 @@ from app.routes.auth import auth_bp
 from app.routes.course_routes import course_bp
 from app.models import User, Student  # Import models to ensure they are registered
 from app.routes.student_profile import student_bp
+from app.utils.firebase_admin_client import init_firebase
 
 def create_app(config_name='default'):
     app = Flask(__name__)
