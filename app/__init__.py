@@ -20,6 +20,11 @@ def create_app(config_name='default'):
     bcrypt.init_app(app)
     CORS(app)
 
+    with app.app_context():
+        # Initialize Firebase Admin SDK
+        init_firebase()
+        
+
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(course_bp, url_prefix='/api/courses')
     app.register_blueprint(student_bp, url_prefix='/api/student')
