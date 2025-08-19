@@ -27,6 +27,7 @@ class Course(db.Model):
     streams = relationship("CourseStream", backref="course")
     locations = relationship("CourseLocation", backref="course")
     education_modes = relationship("CourseEducationMode", backref="course")
+    media_items = relationship("CourseMedia", backref="course") 
 
     def to_dict(self):
         return {
@@ -43,7 +44,8 @@ class Course(db.Model):
             'course_level': self.course_level,
             'streams': [s.stream for s in self.streams],
             'locations': [l.location for l in self.locations],
-            'education_modes': [m.education_mode for m in self.education_modes],
+            'education_modes': [e.education_mode for e in self.education_modes],
+            'medias': [m.to_dict() for m in self.media_items],
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

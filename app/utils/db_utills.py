@@ -120,6 +120,16 @@ TABLE_SCHEMAS = {
         );
     """,
 
+    'course_media': """
+        CREATE TABLE IF NOT EXISTS course_media (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            course_id INT NOT NULL,
+            media_type VARCHAR(10) NOT NULL,
+            media_url VARCHAR(255),
+            FOREIGN KEY (course_id) REFERENCES courses(id)
+        );
+    """,
+
     'student_bookmarked_courses': """
         CREATE TABLE IF NOT EXISTS student_bookmarked_courses (
             id INT AUTO_INCREMENT PRIMARY KEY,
