@@ -1,3 +1,4 @@
+import utils.session
 from app import create_app
 from app.utils.db_utills import create_database, create_tables, alter_columns, create_default_users, apply_schema_updates
 

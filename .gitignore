@@ -1,7 +1,6 @@
 .qodo
 
 # Environment variables
-.env
 
 # Virtual environment
 venv/
@@ -14,5 +13,8 @@ __pycache__/
 *.pyd
 
 # IDE settings (optional but recommended)
-.vscode/
 .idea/
+
+credentials/firebase.json
+config.bat
+node_modules
