@@ -19,6 +19,8 @@ class Course(db.Model):
         'primary education', 'junior education', 'ordinary level', 'advanced level',
         'certificate', 'NVQ', 'diploma', 'higher national diploma', 'degree', 'masters', 'PhD'
     ), nullable=False)
+    age_group = db.Column(db.String(50), nullable=True)
+    minimum_z_score = db.Column(db.String(10), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -27,6 +29,7 @@ class Course(db.Model):
     streams = relationship("CourseStream", backref="course")
     locations = relationship("CourseLocation", backref="course")
     education_modes = relationship("CourseEducationMode", backref="course")
+    media_items = relationship("CourseMedia", backref="course") 
 
     def to_dict(self):
         return {
@@ -41,9 +44,12 @@ class Course(db.Model):
             'install_availability': self.install_availability,
             'instructor': self.instructor,
             'course_level': self.course_level,
+            'age_group': self.age_group,
+            'minimum_z_score': self.minimum_z_score,
             'streams': [s.stream for s in self.streams],
             'locations': [l.location for l in self.locations],
-            'education_modes': [m.education_mode for m in self.education_modes],
+            'education_modes': [e.education_mode for e in self.education_modes],
+            'medias': [m.to_dict() for m in self.media_items],
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

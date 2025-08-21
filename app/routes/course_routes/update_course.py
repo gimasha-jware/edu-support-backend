@@ -29,7 +29,7 @@ def sync_course_items(model, course_id, field_name, new_values: List[str]):
     # Normalize incoming values
     normalized_new_values = normalize_strings(new_values)
 
-    # Get current values fro DB
+    # Get current values from DB
     current_values = {
         getattr(item, field_name).strip().lower()
         for item in model.query.filter_by(course_id=course_id).all()
@@ -71,22 +71,19 @@ def update_course(course_id):
             'institute_type', 'category',
             'course_duration', 'course_fee',
             'install_availability', 'instructor',
-            'course_level'
+            'course_level', 'minimum_z_score'
         ]
         for field in major_fields:
             if field in data:
                 setattr(course, field, data[field])
 
-        # Replace streams if provide
+        # Replace streams, locations and education modes if provide
         if 'streams' in data:
             sync_course_items(CourseStream, course_id, 'stream', data['streams'])
 
-        # Replace locations if provide
         if 'locations' in data:
             sync_course_items(CourseLocation, course_id, 'location', data['locations'])
 
-
-        # Replace education modes if provide
         if 'education_modes' in data:
             error = validate_education_modes(data['education_modes'])
             if error:
