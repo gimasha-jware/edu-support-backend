@@ -12,6 +12,7 @@ from app.models.course_media import CourseMedia
 from app.extensions import db
 from app.utils.role_checker import roles_required
 from app.utils.file_utils import UPLOAD_FOLDER, allowed_file, get_file_extension, ALLOWED_IMAGE_EXTENSIONS, ALLOWED_VIDEO_EXTENSIONS
+from app.routes.course_routes.utils.normalize_course_data import normalize_course_data
 
 from werkzeug.utils import secure_filename
 
@@ -30,12 +31,21 @@ def validate_create_course_payload(data: dict) -> List[str]:
   errors = []
 
   for field in required_fields:
-    if field not in data:
+    if field not in data or data[field] is None or str(data[field]).strip() == "":
       errors.append(f"'{field}' is required")
 
   education_modes = data.get('education_modes')
   if not education_modes or not isinstance(education_modes, list) or len(education_modes) == 0:
     errors.append("At least one education mode is required")
+
+  # Normalized install_availability, course_duration and course_fee
+  normlized_data , error = normalize_course_data(data)
+  if error:
+    logger.error("Invalid input of install_avalibility")
+    errors.append(error)
+  else:
+    data = normlized_data
+    logger.info("Assigned normalized data into data")
 
   return errors
 
@@ -90,34 +100,13 @@ def create_course():
           except json.JSONDecodeError:
               return jsonify({"error": f"Invalid JSON for field '{field}'"}), 400
 
-  # Convert install_availability to boolean
-  if "install_availability" in data:
-      val = str(data["install_availability"]).lower()
-      if val == "true":
-          data["install_availability"] = True
-      elif val == "false":
-          data["install_availability"] = False
-      else:
-          return jsonify({"error": "Invalid value for install_availability"}), 400
-  else:
-      data["install_availability"] = False
-
-  # Convert numeric fields
-  try:
-      if "course_duration" in data:
-          data["course_duration"] = int(data["course_duration"])
-      if "course_fee" in data:
-          data["course_fee"] = float(data["course_fee"])
-  except ValueError:
-      return jsonify({"error": "Invalid number format for course_duration or course_fee"}), 400
-
-  logger.info(f"Create course request data: {data}")
-  
   # Validate data
   errors = validate_create_course_payload(data)
   if errors:
     return jsonify({"errors": errors}), 400
   
+  logger.info(f"Create course request data: {data}")
+
   # Save media files
   media_files = request.files.getlist("media_files")
   media_items = save_media_files(media_files) if media_files else []
@@ -138,7 +127,9 @@ def create_course():
             course_fee=data['course_fee'],
             install_availability=data['install_availability'],
             instructor=data.get('instructor'),
-            course_level=data['course_level']
+            course_level=data['course_level'],
+            age_group=data['age_group'],
+            minimum_z_score=data['minimum_z_score'],
         )
     
     # Add media items

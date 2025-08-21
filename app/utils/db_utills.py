@@ -157,7 +157,8 @@ EXTRA_COLUMNS = {
             "name": "course_level", 
             "type": "ENUM('primary education', 'junior education', 'ordinary level', 'advanced level', 'certificate', 'NVQ', 'diploma', 'higher national diploma', 'degree', 'masters', 'PhD') NOT NULL"
         },
-
+        {"name": "age_group", "type": "VARCHAR(50)"},
+        {"name": "minimum_z_score", "type": "VARCHAR(10)"},
     ]
 }
 
