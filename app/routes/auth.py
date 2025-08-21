@@ -6,6 +6,7 @@ from app.models.student import Student
 from app.models.institute import Institute
 from datetime import datetime, timedelta
 import logging
+from app.utils.firebase_admin_client import auth as fb_auth
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -157,3 +158,76 @@ def login():
         import traceback; traceback.print_exc()
         return jsonify({'error': 'Login failed', 'details': str(e)}), 500
 
+@auth_bp.route('/firebase', methods=['POST'])
+def firebase_login():
+    """
+    Frontend sends a Firebase ID token. We verify it, upsert user in MySQL,
+    then issue our own JWT so the rest of the app keeps working.
+    """
+    try:
+        data = request.get_json() or {}
+        id_token = data.get('idToken') or data.get('credential')  # support both keys
+        if not id_token:
+            return jsonify({'error': 'Missing idToken'}), 400
+
+        # Verify with Firebase
+        decoded = fb_auth.verify_id_token(id_token)
+        firebase_uid = decoded.get('uid')
+        email = decoded.get('email')
+        name = decoded.get('name', '') or ''
+        given_name = decoded.get('given_name', '')
+        family_name = decoded.get('family_name', '')
+
+        if not email:
+            return jsonify({'error': 'Email is required from Firebase token'}), 400
+
+        # Find or create user in your DB
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            # Split name if given_name/family_name not provided
+            if not given_name and not family_name and name:
+                parts = name.split(' ')
+                given_name = parts[0]
+                family_name = ' '.join(parts[1:]) if len(parts) > 1 else ''
+
+            user = User(
+                email=email,
+                first_name=given_name or '',
+                last_name=family_name or '',
+                password='',  # not used for Firebase users
+                user_type=UserType.STUDENT,  # default; adjust if you have logic for admins
+                
+            )
+            user.is_active=True
+            db.session.add(user)
+            db.session.flush()  # get user.uid
+
+            # Create a student row if needed
+            student = Student(user_id=user.uid, is_active=True)
+            db.session.add(student)
+            db.session.commit()
+
+        if not user.is_active:
+            return jsonify({'error': 'Account is deactivated'}), 401
+
+        # Issue app JWT
+        identity = str(user.uid)
+        additional_claims = {
+            "user_type": user.user_type.value,
+            "firebase_uid": firebase_uid
+        }
+        access_token = create_access_token(identity=identity, additional_claims=additional_claims, expires_delta=timedelta(hours=1))
+        refresh_token = create_refresh_token(identity=identity, additional_claims=additional_claims, expires_delta=timedelta(days=30))
+
+        return jsonify({
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'user': user.to_dict(),
+            'message': 'Firebase login successful'
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        import traceback; traceback.print_exc()
+        return jsonify({'error': 'Firebase login failed', 'details': str(e)}), 500
+    
