@@ -11,7 +11,7 @@ from app.models.course_education_mode import CourseEducationMode
 from app.models.course_media import CourseMedia
 from app.extensions import db
 from app.utils.role_checker import roles_required
-from app.utils.file_utils import UPLOAD_FOLDER, allowed_file, get_file_extension, ALLOWED_IMAGE_EXTENSIONS, ALLOWED_VIDEO_EXTENSIONS
+from app.routes.course_routes.utils.file_utils import UPLOAD_FOLDER, allowed_file, get_file_extension, ALLOWED_IMAGE_EXTENSIONS, ALLOWED_VIDEO_EXTENSIONS
 from app.routes.course_routes.utils.normalize_course_data import normalize_course_data
 
 from werkzeug.utils import secure_filename
